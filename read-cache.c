@@ -1828,8 +1828,9 @@ static struct cache_entry *create_from_disk(struct mem_pool *ce_mem_pool,
 		flags |= extended_flags;
 		name = (const char *)(flagsp + 2 * sizeof(uint16_t));
 	}
-	else
+	else {
 		name = (const char *)(flagsp + sizeof(uint16_t));
+        }
 
 	if (expand_name_field) {
 		const unsigned char *cp = (const unsigned char *)name;
@@ -2053,6 +2054,10 @@ static unsigned long load_cache_entry_block(struct index_state *istate,
 		struct cache_entry *ce;
 		unsigned long consumed;
 
+                // PROBLEMA NESSE COISO
+                /* printf("LOAD CACHE %s\n", (const char *)(mmap + src_offset + offsetof(struct ondisk_cache_entry, data) + the_hash_algo->rawsz + sizeof(uint16_t))); */
+                /* printf("LOAD CACHE %s\n", (const char *)(mmap + 0x4a)); */
+
 		ce = create_from_disk(ce_mem_pool, istate->version,
 				      mmap + src_offset,
 				      &consumed, previous_ce);
@@ -2061,6 +2066,7 @@ static unsigned long load_cache_entry_block(struct index_state *istate,
 		src_offset += consumed;
 		previous_ce = ce;
 	}
+        
 	return src_offset - start_offset;
 }
 
@@ -2245,6 +2251,7 @@ int do_read_index(struct index_state *istate, const char *path, int must_exist)
 	if (mmap_size < sizeof(struct cache_header) + the_hash_algo->rawsz)
 		die(_("%s: index file smaller than expected"), path);
 
+        // APARENTEMENTE ELE JA TA MAPEANDO UM ARQUIVO SUJO AQUI
 	mmap = xmmap_gently(NULL, mmap_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (mmap == MAP_FAILED)
 		die_errno(_("%s: unable to map index file%s"), path,

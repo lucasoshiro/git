@@ -555,14 +555,16 @@ static int grep_cache(struct grep_opt *opt,
 	if (repo_read_index(repo) < 0)
 		die(_("index file corrupt"));
 
+        // BUG APARECE A PARTIR DAQUI!
 	for (nr = 0; nr < repo->index->cache_nr; nr++) {
 		const struct cache_entry *ce = repo->index->cache[nr];
-
+                
 		if (!cached && ce_skip_worktree(ce))
 			continue;
 
 		strbuf_setlen(&name, name_base_len);
 		strbuf_addstr(&name, ce->name);
+
 		if (S_ISSPARSEDIR(ce->ce_mode)) {
 			enum object_type type;
 			struct tree_desc tree;
