@@ -294,6 +294,7 @@ struct rev_info {
 	const char	*extra_headers;
 	const char	*log_reencode;
 	const char	*subject_prefix;
+	const char	*subject_extra_prefix;
 	int		patch_name_max;
 	int		no_inline;
 	int		show_log_size;
@@ -413,6 +414,7 @@ struct rev_info {
 	.expand_tabs_in_log = -1, \
 	.commit_format = CMIT_FMT_DEFAULT, \
 	.expand_tabs_in_log_default = 8, \
+        .subject_extra_prefix = NULL, \
 }
 
 /**
