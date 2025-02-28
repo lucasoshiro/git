@@ -2256,6 +2256,8 @@ int cmd_format_patch(int argc,
 		die(_("options '%s' and '%s' cannot be used together"), "-n", "-k");
 	if (cfg.keep_subject && cfg.subject_prefix)
 		die(_("options '%s' and '%s' cannot be used together"), "--subject-prefix/--rfc", "-k");
+	if (cfg.keep_subject && extra_prefix)
+		die(_("options '%s' and '%s' cannot be used together"), "--subject-extra-prefix", "-k");
 	rev.preserve_subject = cfg.keep_subject;
 
 	argc = setup_revisions(argc, argv, &rev, &s_r_opt);
