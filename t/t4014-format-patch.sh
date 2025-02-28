@@ -1480,6 +1480,10 @@ test_expect_success '--subject-extra-prefix works with -v' '
 	test_cmp expect actual
 '
 
+test_expect_failure '--subject-extra-prefix does not run with -k' '
+	git format-patch -k -1 --stdout --subject-extra-prefix=EXTRA >/dev/null
+'
+
 test_expect_success '--from=ident notices bogus ident' '
 	test_must_fail git format-patch -1 --stdout --from=foo >patch
 '
