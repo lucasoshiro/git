@@ -1444,6 +1444,15 @@ test_expect_success '--rfc and -k cannot be used together' '
 	test_cmp expect.err actual.err
 '
 
+cat >expect <<'EOF'
+Subject: [EXTRA][PATCH] header with . in it
+EOF
+test_expect_success '--subject-extra-prefix adds extra prefix' '
+	git format-patch -1 --stdout --subject-extra-prefix=EXTRA >patch &&
+	grep ^Subject: patch >actual &&
+	test_cmp expect actual
+'
+
 test_expect_success '--from=ident notices bogus ident' '
 	test_must_fail git format-patch -1 --stdout --from=foo >patch
 '
