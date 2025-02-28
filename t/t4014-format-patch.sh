@@ -1471,6 +1471,15 @@ test_expect_success '--subject-extra-prefix works with numbered patches' '
 	test_cmp expect actual
 '
 
+cat >expect <<'EOF'
+Subject: [EXTRA][PATCH v2] header with . in it
+EOF
+test_expect_success '--subject-extra-prefix works with -v' '
+	git format-patch -v2 -1 --stdout --subject-extra-prefix=EXTRA >patch &&
+	grep ^Subject: patch >actual &&
+	test_cmp expect actual
+'
+
 test_expect_success '--from=ident notices bogus ident' '
 	test_must_fail git format-patch -1 --stdout --from=foo >patch
 '
