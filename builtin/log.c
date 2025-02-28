@@ -2205,6 +2205,7 @@ int cmd_format_patch(int argc,
 		rev.reroll_count = reroll_count;
 	}
 
+	rev.subject_extra_prefix = extra_prefix;
 	rev.subject_prefix = cfg.sprefix.buf;
 
 	for (i = 0; i < cfg.extra_hdr.nr; i++) {
