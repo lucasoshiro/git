@@ -2036,6 +2036,7 @@ int cmd_format_patch(int argc,
 	struct strbuf rdiff2 = STRBUF_INIT;
 	struct strbuf rdiff_title = STRBUF_INIT;
 	const char *rfc = NULL;
+	const char *extra_prefix = NULL;
 	int creation_factor = -1;
 	const char *signature = git_version_string;
 	char *signature_to_free = NULL;
@@ -2079,6 +2080,9 @@ int cmd_format_patch(int argc,
 		OPT_CALLBACK_F(0, "subject-prefix", &cfg, N_("prefix"),
 			    N_("use [<prefix>] instead of [PATCH]"),
 			    PARSE_OPT_NONEG, subject_prefix_callback),
+		OPT_STRING(0, "subject-extra-prefix", &extra_prefix,
+			   N_("subject-extra-prefix"),
+			   N_("add an extra prefix at the beginning of the subject")),
 		OPT_CALLBACK_F('o', "output-directory", &output_directory,
 			    N_("dir"), N_("store resulting files in <dir>"),
 			    PARSE_OPT_NONEG, output_directory_callback),
