@@ -749,9 +749,9 @@ int cmd_rev_parse(int argc,
 
 		if (!seen_end_of_options) {
 			if (!strcmp(arg, "--local-env-vars")) {
-				int i;
-				for (i = 0; local_repo_env[i]; i++)
-					printf("%s\n", local_repo_env[i]);
+				int j;
+				for (j = 0; local_repo_env[i]; j++)
+					printf("%s\n", local_repo_env[j]);
 				continue;
 			}
 			if (!strcmp(arg, "--resolve-git-dir")) {
