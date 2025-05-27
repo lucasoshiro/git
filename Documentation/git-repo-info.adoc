@@ -1,0 +1,45 @@
+git-repo-info(1)
+================
+
+NAME
+----
+git-repo-info - Retrieve information about a repository
+
+SYNOPSIS
+--------
+[synopsis]
+git repo-info
+
+DESCRIPTION
+-----------
+Retrieve information about the current repository in a machine-readable format.
+
+`git repo-info` will be the primary tool to query repository-specific
+information, which currently can also be done by calling `git rev-parse` (see
+linkgit:git-rev-parse[1]). `git repo-info` doesn't query information unrelated
+to the current repository or that is already retrieved by a specialized command,
+for example, `git config` (see linkgit:git-config[1]) or `git var` (see
+linkgit:git-var[1]).
+
+THIS COMMAND IS EXPERIMENTAL. THE BEHAVIOR MAY CHANGE.
+
+OPTIONS
+-------
+
+`<key>`::
+Key of the value that will be retrieved. It should be in the format
+`<category>.<field>`. See the "CATEGORIES AND FIELDS" section below.
+
+CATEGORIES AND FIELDS
+---------------------
+
+The set of data that `git repo-info` can return is divided into
+categories. Each category is composed by one or more fields.
+
+SEE ALSO
+--------
+linkgit:git-rev-parse[1]
+
+GIT
+---
+Part of the linkgit:git[1] suite
