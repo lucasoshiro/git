@@ -34,4 +34,12 @@ test_repo_info 'object format sha256 is retrieved correctly' \
 	'--object-format=sha256' \
 	'row[0].object-format' 'sha256'
 
+test_repo_info 'ref format files is retrieved correctly' \
+	'' \
+	'row[0].ref-format' 'files'
+
+test_repo_info 'ref format reftable is retrieved correctly' \
+	'--ref-format=reftable' \
+	'row[0].ref-format' 'reftable'
+
 test_done

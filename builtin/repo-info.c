@@ -2,13 +2,16 @@
 #include "hash.h"
 #include "json-writer.h"
 #include "parse-options.h"
+#include "refs.h"
 
 struct repo_info {
 	const char *object_format;
+	const char *ref_format;
 };
 
 static void obj_info_init(struct repo_info *info, struct repository *repo) {
 	info->object_format = repo->hash_algo->name;
+	info->ref_format = ref_storage_format_to_name(repo->ref_storage_format);
 }
 
 static void obj_info_marshal(struct repo_info *info, struct json_writer *jw) {
@@ -17,6 +20,7 @@ static void obj_info_marshal(struct repo_info *info, struct json_writer *jw) {
 	jw_object_begin(jw, 1);
 	{
 		jw_object_string(jw, "object-format", info->object_format);
+		jw_object_string(jw, "ref-format", info->ref_format);
 	}
 	jw_end(jw);
 }
