@@ -241,6 +241,7 @@ integration_tests = [
   't1514-rev-parse-push.sh',
   't1515-rev-parse-outside-repo.sh',
   't1517-outside-repo.sh',
+  't1518-repo-info.sh',
   't1600-index.sh',
   't1601-index-bogus.sh',
   't1700-split-index.sh',
