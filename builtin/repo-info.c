@@ -14,6 +14,10 @@ struct repo_info_json_schema {
 		int use;
 		int format;
 	} objects;
+	struct {
+		int use;
+		int format;
+	} references;
 };
 
 struct repo_info {
@@ -63,9 +67,23 @@ static void repo_info_init(struct repo_info *repo_info,
 			if (argc != 0) goto next;
 		}
 
-		if (argc != 0) {
-			die("invalid field %s", arg);
+		if (argc == 0 || !strcmp(arg, "references.format")) {
+			switch (repo_info->format) {
+			case FORMAT_PLAINTEXT:
+				strbuf_addstr(&repo_info->body.plaintext,
+					      ref_storage_format_to_name(repo->ref_storage_format)
+					      );
+				strbuf_addch(&repo_info->body.plaintext, '\n');
+				break;
+			case FORMAT_JSON:
+				repo_info->body.json.references.use = 1;
+				repo_info->body.json.references.format = 1;
+				break;
+			}
+			if (argc != 0) goto next;
 		}
+
+		if (argc != 0) die("invalid field %s", arg);
 
 	next:
 		argc--;
@@ -92,6 +110,13 @@ static void repo_info_print_json(struct repository *repo,
 		if (schema->objects.format) {
 			jw_object_string(&jw, "format",
 					 repo->hash_algo->name);
+		}
+		jw_end(&jw);
+	}
+	if (schema->references.use) {
+		jw_object_inline_begin_object(&jw, "references");
+		if (schema->references.format) {
+			jw_object_string(&jw, "format", ref_storage_format_to_name(repo->ref_storage_format));
 		}
 		jw_end(&jw);
 	}
