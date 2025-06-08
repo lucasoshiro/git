@@ -1,4 +1,7 @@
+#define USE_THE_REPOSITORY_VARIABLE
+
 #include "builtin.h"
+#include "environment.h"
 #include "hash.h"
 #include "json-writer.h"
 #include "parse-options.h"
@@ -10,17 +13,22 @@ enum output_format {
 };
 
 enum repo_info_category {
-	CATEGORY_REFERENCES = 1
+	CATEGORY_REFERENCES = 1,
+	CATEGORY_LAYOUT = 1 << 1
 };
 
 enum repo_info_references_field {
 	FIELD_REFERENCES_FORMAT = 1
 };
 
+enum repo_info_layout_field { FIELD_LAYOUT_BARE = 1
+};
+
 struct repo_info_field {
 	enum repo_info_category category;
 	union {
 		enum repo_info_references_field references;
+		enum repo_info_layout_field layout;
 	} field;
 };
 
@@ -33,6 +41,7 @@ struct repo_info {
 
 const char *default_fields[] = {
 	"references.format",
+	"layout.bare"
 };
 
 static void repo_info_init(struct repo_info *repo_info,
@@ -68,6 +77,10 @@ static void repo_info_init(struct repo_info *repo_info,
 			field->category = CATEGORY_REFERENCES;
 			field->field.references = FIELD_REFERENCES_FORMAT;
 		}
+		else if (!strcmp(arg, "layout.bare")) {
+			field->category = CATEGORY_LAYOUT;
+			field->field.layout = FIELD_LAYOUT_BARE;
+		}
 		else {
 			die("invalid field '%s'", arg);
 		}
@@ -92,6 +105,13 @@ static void repo_info_print_plaintext(struct repo_info *repo_info) {
 				break;
 			}
 			break;
+		case CATEGORY_LAYOUT:
+			switch (field->field.layout) {
+			case FIELD_LAYOUT_BARE:
+				puts(is_bare_repository() ? "true" : "false");
+				break;
+			}
+			break;
 		}
 	}
 }
@@ -102,6 +122,7 @@ static void repo_info_print_json(struct repo_info *repo_info)
 	int i;
 	unsigned int categories = 0;
 	unsigned int references_fields = 0;
+	unsigned int layout_fields = 0;
 	struct repository *repo = repo_info->repo;
 
 	for (i = 0; i < repo_info->n_fields; i++) {
@@ -110,6 +131,9 @@ static void repo_info_print_json(struct repo_info *repo_info)
 		switch (field->category) {
 		case CATEGORY_REFERENCES:
 			references_fields |= field->field.references;
+			break;
+		case CATEGORY_LAYOUT:
+			layout_fields |= field->field.layout;
 			break;
 		}
 	}
@@ -124,6 +148,15 @@ static void repo_info_print_json(struct repo_info *repo_info)
 			const char *format_name = ref_storage_format_to_name(
 				repo->ref_storage_format);
 			jw_object_string(&jw, "format", format_name);
+		}
+		jw_end(&jw);
+	}
+
+	if (categories & CATEGORY_LAYOUT) {
+		jw_object_inline_begin_object(&jw, "layout");
+		if (layout_fields & FIELD_LAYOUT_BARE) {
+			jw_object_bool(&jw, "bare",
+				       is_bare_repository());
 		}
 		jw_end(&jw);
 	}
