@@ -1592,4 +1592,38 @@ test_expect_success 'stash apply reports a locked index' '
 	)
 '
 
+test_expect_success 'stash reflog message uses superproject branch, not submodule branch' '
+	git init sub_project &&
+	(
+		cd sub_project &&
+		echo "Initial content in sub_project" >sub_file.txt &&
+		git add sub_file.txt &&
+		git commit -q -m "Initial commit in sub_project"
+	) &&
+
+	git init main_project &&
+	(
+		cd main_project &&
+		echo "Initial content in main_project" >main_file.txt &&
+		git add main_file.txt &&
+		git commit -q -m "Initial commit in main_project" &&
+
+		git -c protocol.file.allow=always submodule add --quiet ../sub_project sub &&
+		git commit -q -m "Added submodule sub_project" &&
+
+		git checkout -q -b feature_main &&
+		cd sub &&
+		git checkout -q -b feature_sub &&
+		cd .. &&
+
+		git checkout -q -b work_branch &&
+		echo "Important work to be stashed" >work_item.txt &&
+		git add work_item.txt &&
+		git stash push -q -m "custom stash for work_branch" &&
+
+		git stash list >../actual_stash_list.txt &&
+		grep "On work_branch: custom stash for work_branch" ../actual_stash_list.txt
+	)
+'
+
 test_done
