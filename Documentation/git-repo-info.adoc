@@ -66,6 +66,10 @@ CATEGORIES AND FIELDS
 The set of data that `git repo-info` can return is divided into
 categories. Each category is composed by one or more fields.
 
+`references`::
+Reference-related data:
+* `format`: the reference storage format, either `files` or `reftable`.
+
 SEE ALSO
 --------
 linkgit:git-rev-parse[1]
