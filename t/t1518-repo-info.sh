@@ -6,6 +6,8 @@ export GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME
 
 . ./test-lib.sh
 
+DEFAULT_NUMBER_OF_FIELDS=1
+
 parse_json () {
 	tr '\n' ' ' | "$PERL_PATH" "$TEST_DIRECTORY/t0019/parse_json.perl"
 }
@@ -45,5 +47,23 @@ test_expect_success 'plaintext: returns empty output with allow-empty' '
 	git repo-info --allow-empty --format=plaintext >output &&
 	test_line_count = 0 output
 '
+
+test_repo_info 'ref format files is retrieved correctly' \
+	'' \
+	'references.format' 'files'
+
+test_repo_info 'ref format reftable is retrieved correctly' \
+	'--ref-format=reftable' \
+	'references.format' 'reftable'
+
+test_expect_success 'plaintext: output all default fields' "
+	git repo-info --format=plaintext >actual &&
+	test_line_count = $DEFAULT_NUMBER_OF_FIELDS actual
+"
+
+test_expect_success 'json: output all default fields' "
+	git repo-info --format=json | parse_json | grep '.*\..*\..*' >actual &&
+	test_line_count = $DEFAULT_NUMBER_OF_FIELDS actual
+"
 
 test_done
