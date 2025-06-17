@@ -8,7 +8,7 @@ git-repo-info - Retrieve information about a repository
 SYNOPSIS
 --------
 [synopsis]
-git repo-info
+git repo-info [--format <format>] [<field>...]
 
 DESCRIPTION
 -----------
@@ -25,6 +25,36 @@ THIS COMMAND IS EXPERIMENTAL. THE BEHAVIOR MAY CHANGE.
 
 OPTIONS
 -------
+`--format`::
+Specify the output format `<format>`. The valid values are:
++
+* `json`: output the data in JSON format, following this schema:
++
+----------------
+{
+  "category1": {
+    "field1": value1,
+    "field2": value2,
+    ...
+  },
+  "category2": {
+    "field3": value3,
+    ...
+  },
+  ...
+}
+----------------
+* `null-terminated`: output the data in a null-terminated format,
+following this syntax:
++
+----------------
+category1.field1<LF>value1<NUL>
+category1.field2<LF>value2<NUL>
+...
+----------------
++
+In this format, the fields will be returned in the same order they were
+requested.
 
 `<key>`::
 Key of the value that will be retrieved. It should be in the format
