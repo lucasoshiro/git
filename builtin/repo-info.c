@@ -1,4 +1,8 @@
+#define USE_THE_REPOSITORY_VARIABLE
+
 #include "builtin.h"
+#include "environment.h"
+#include "hash.h"
 #include "json-writer.h"
 #include "parse-options.h"
 #include "refs.h"
@@ -10,16 +14,22 @@ enum output_format {
 
 enum repo_info_category {
 	CATEGORY_REFERENCES = 1 << 0,
+	CATEGORY_LAYOUT = 1 << 1,
 };
 
 enum repo_info_references_field {
 	FIELD_REFERENCES_FORMAT = 1 << 0,
 };
 
+enum repo_info_layout_field {
+	FIELD_LAYOUT_BARE = 1 << 0,
+};
+
 struct repo_info_field {
 	enum repo_info_category category;
 	union {
 		enum repo_info_references_field references;
+		enum repo_info_layout_field layout;
 	} u;
 };
 
@@ -53,6 +63,9 @@ static void repo_info_init(struct repo_info *repo_info,
 		if (!strcmp(arg, "references.format")) {
 			field->category = CATEGORY_REFERENCES;
 			field->u.references = FIELD_REFERENCES_FORMAT;
+		} else if (!strcmp(arg, "layout.bare")) {
+			field->category = CATEGORY_LAYOUT;
+			field->u.layout = FIELD_LAYOUT_BARE;
 		} else {
 			die("invalid field '%s'", arg);
 		}
@@ -81,6 +94,17 @@ static void append_null_terminated_field(struct strbuf *buf,
 			break;
 		}
 		break;
+
+	case CATEGORY_LAYOUT:
+		strbuf_addstr(buf, "layout.");
+		switch (field->u.layout) {
+		case FIELD_LAYOUT_BARE:
+			strbuf_addstr(buf, "bare\n");
+			strbuf_addstr(buf, is_bare_repository() ? "true" :
+								  "false");
+			break;
+		}
+		break;
 	}
 
 	strbuf_addch(buf, '\0');
@@ -106,6 +130,7 @@ static void repo_info_print_json(struct repo_info *repo_info)
 	struct json_writer jw;
 	unsigned int categories = 0;
 	unsigned int references_fields = 0;
+	unsigned int layout_fields = 0;
 	struct repository *repo = repo_info->repo;
 
 	for (size_t i = 0; i < repo_info->fields_nr; i++) {
@@ -114,6 +139,9 @@ static void repo_info_print_json(struct repo_info *repo_info)
 		switch (field->category) {
 		case CATEGORY_REFERENCES:
 			references_fields |= field->u.references;
+			break;
+		case CATEGORY_LAYOUT:
+			layout_fields |= field->u.layout;
 			break;
 		}
 	}
@@ -127,6 +155,15 @@ static void repo_info_print_json(struct repo_info *repo_info)
 			const char *format_name = ref_storage_format_to_name(
 				repo->ref_storage_format);
 			jw_object_string(&jw, "format", format_name);
+		}
+		jw_end(&jw);
+	}
+
+	if (categories & CATEGORY_LAYOUT) {
+		jw_object_inline_begin_object(&jw, "layout");
+		if (layout_fields & FIELD_LAYOUT_BARE) {
+			jw_object_bool(&jw, "bare",
+				       is_bare_repository());
 		}
 		jw_end(&jw);
 	}
