@@ -42,6 +42,20 @@ test_repo_info 'bare repository = false is retrieved correctly' '
 test_repo_info 'bare repository = true is retrieved correctly' '
 	git init --bare repo' 'layout.bare' 'true'
 
+test_repo_info 'shallow repository = false is retrieved correctly' '
+	git init repo' 'layout.shallow' 'false'
+
+test_repo_info 'shallow repository = true is retrieved correctly' '
+	git init remote &&
+	cd remote &&
+	echo x >x &&
+	git add x &&
+	git commit -m x &&
+	cd .. &&
+	git clone --depth 1 "file://$PWD/remote" repo &&
+	rm -rf remote
+	' 'layout.shallow' 'true'
+
 test_expect_success 'git-repo-info aborts if an invalid key is requested' '
 	test_when_finished "rm -rf expected err" &&
 	echo "error: key '\'foo\'' not found" >expected &&
@@ -58,6 +72,13 @@ test_expect_success "only one value is returned if the same key is requested twi
 	cut -d "=" -f 2 <output >actual_value &&
         test_cmp expected_key actual_key &&
         test_cmp expected_value actual_value
+'
+
+test_expect_success 'output is returned correctly when two keys are requested' '
+	test_when_finished "rm -f expect" &&
+	printf "layout.bare=false\nlayout.shallow=false\n" >expect &&
+	git repo info layout.shallow layout.bare >actual &&
+	test_cmp expect actual
 '
 
 test_done
