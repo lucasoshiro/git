@@ -9,11 +9,16 @@
 #include "shallow.h"
 
 static const char *const repo_usage[] = {
-	"git repo info [<key>...]",
+	"git repo info [--format=(keyvalue|nul)] [<key>...]",
 	NULL
 };
 
 typedef int get_value_fn(struct repository *repo, struct strbuf *buf);
+
+enum output_format {
+	FORMAT_KEYVALUE,
+	FORMAT_NUL_TERMINATED,
+};
 
 struct field {
 	const char *key;
@@ -73,7 +78,9 @@ static int qsort_strcmp(const void *va, const void *vb)
 	return strcmp(a, b);
 }
 
-static int print_fields(int argc, const char **argv, struct repository *repo)
+static int print_fields(int argc, const char **argv,
+			struct repository *repo,
+			enum output_format format)
 {
 	int ret = 0;
 	const char *last = "";
@@ -101,8 +108,18 @@ static int print_fields(int argc, const char **argv, struct repository *repo)
 		}
 
 		get_value(repo, &valbuf);
-		quote_c_style(valbuf.buf, &quotbuf, NULL, 0);
-		printf("%s=%s\n", key, quotbuf.buf);
+
+		switch (format) {
+		case FORMAT_KEYVALUE:
+			quote_c_style(valbuf.buf, &quotbuf, NULL, 0);
+			printf("%s=%s\n", key, quotbuf.buf);
+			break;
+		case FORMAT_NUL_TERMINATED:
+			printf("%s\n%s%c", key, valbuf.buf, '\0');
+			break;
+		default:
+			BUG("not a valid output format: %d", format);
+		}
 	}
 
 	strbuf_release(&valbuf);
@@ -110,10 +127,27 @@ static int print_fields(int argc, const char **argv, struct repository *repo)
 	return ret;
 }
 
-static int repo_info(int argc, const char **argv, const char *prefix UNUSED,
+static int repo_info(int argc, const char **argv, const char *prefix,
 		     struct repository *repo)
 {
-	return print_fields(argc - 1, argv + 1, repo);
+	const char *format_str = "keyvalue";
+	enum output_format format;
+	struct option options[] = {
+		OPT_STRING(0, "format", &format_str, N_("format"),
+			   N_("output format")),
+		OPT_END()
+	};
+
+	argc = parse_options(argc, argv, prefix, options, repo_usage, 0);
+
+	if (!strcmp(format_str, "keyvalue"))
+		format = FORMAT_KEYVALUE;
+	else if (!strcmp(format_str, "nul"))
+		format = FORMAT_NUL_TERMINATED;
+	else
+		die(_("invalid format '%s'"), format_str);
+
+	return print_fields(argc, argv, repo, format);
 }
 
 int cmd_repo(int argc, const char **argv, const char *prefix,
