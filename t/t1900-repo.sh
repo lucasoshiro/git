@@ -20,11 +20,20 @@ test_repo_info () {
 	key=$3
 	expected_value=$4
 
-	test_expect_success "$label" '
+	test_expect_success "null-terminated: $label" '
+		test_when_finished "rm -rf repo" &&
+		eval "$init_command" &&
+		echo "$expected_value" | lf_to_nul >expected &&
+		git -C repo repo info --format=nul "$key" >output &&
+		tail -n 1 output >actual &&
+		test_cmp expected actual
+	'
+
+	test_expect_success "key-value: $label" '
 		test_when_finished "rm -rf repo" &&
 		eval "$init_command" &&
 		echo "$expected_value" >expected &&
-		git -C repo repo info "$key" >output &&
+		git -C repo repo info --format=keyvalue "$key" >output &&
 		cut -d "=" -f 2 <output >actual &&
 		test_cmp expected actual
 	'
@@ -79,6 +88,13 @@ test_expect_success 'output is returned correctly when two keys are requested' '
 	printf "layout.bare=false\nlayout.shallow=false\n" >expect &&
 	git repo info layout.shallow layout.bare >actual &&
 	test_cmp expect actual
+'
+
+test_expect_success 'git-repo-info aborts when requesting an invalid format' '
+	test_when_finished "rm -f err expected" &&
+	echo "fatal: invalid format '\'foo\''" >expected &&
+	test_must_fail git repo info --format=foo 2>err &&
+	test_cmp expected err
 '
 
 test_done

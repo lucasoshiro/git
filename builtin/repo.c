@@ -9,6 +9,11 @@
 
 typedef int get_value_fn(struct repository *repo, struct strbuf *buf);
 
+enum output_format {
+	FORMAT_KEYVALUE,
+	FORMAT_NUL_TERMINATED,
+};
+
 struct field {
 	const char *key;
 	get_value_fn *get_value;
@@ -68,9 +73,24 @@ static int qsort_strcmp(const void *va, const void *vb)
 	return strcmp(a, b);
 }
 
-static int print_fields(int argc, const char **argv, struct repository *repo)
+static int print_fields(int argc, const char **argv,
+			struct repository *repo,
+			enum output_format format)
 {
 	const char *last = "";
+	char kv_sep;
+	char field_sep;
+
+	switch (format) {
+	case FORMAT_KEYVALUE:
+		kv_sep = '=';
+		field_sep = '\n';
+		break;
+	case FORMAT_NUL_TERMINATED:
+		kv_sep = '\n';
+		field_sep = '\0';
+		break;
+	}
 
 	QSORT(argv, argc, qsort_strcmp);
 
@@ -91,7 +111,7 @@ static int print_fields(int argc, const char **argv, struct repository *repo)
 		}
 
 		get_value(repo, &value);
-		printf("%s=%s\n", key, value.buf);
+		printf("%s%c%s%c", key, kv_sep, value.buf, field_sep);
 		last = key;
 		strbuf_release(&value);
 	}
@@ -99,10 +119,31 @@ static int print_fields(int argc, const char **argv, struct repository *repo)
 	return 0;
 }
 
-static int repo_info(int argc, const char **argv, const char *prefix UNUSED,
+static int repo_info(int argc, const char **argv, const char *prefix,
 		     struct repository *repo)
 {
-	return print_fields(argc - 1, argv + 1, repo);
+	const char *format_str = "keyvalue";
+	enum output_format format;
+	const char *const repo_info_usage[] = {
+		"git repo info [<key>...]",
+		NULL
+	};
+	struct option options[] = {
+		OPT_STRING(0, "format", &format_str, N_("format"),
+			   N_("output format")),
+		OPT_END()
+	};
+
+	argc = parse_options(argc, argv, prefix, options, repo_info_usage, 0);
+
+	if (!strcmp(format_str, "keyvalue"))
+		format = FORMAT_KEYVALUE;
+	else if (!strcmp(format_str, "nul"))
+		format = FORMAT_NUL_TERMINATED;
+	else
+		die(_("invalid format '%s'"), format_str);
+
+	return print_fields(argc, argv, repo, format);
 }
 
 int cmd_repo(int argc, const char **argv, const char *prefix,
