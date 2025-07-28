@@ -3,9 +3,9 @@
 #include "builtin.h"
 #include "environment.h"
 #include "parse-options.h"
+#include "path.h"
 #include "quote.h"
 #include "refs.h"
-#include "strbuf.h"
 #include "shallow.h"
 
 static const char *const repo_usage[] = {
@@ -80,7 +80,8 @@ static int qsort_strcmp(const void *va, const void *vb)
 
 static int print_fields(int argc, const char **argv,
 			struct repository *repo,
-			enum output_format format)
+			enum output_format format,
+			enum path_format_type path_format UNUSED)
 {
 	int ret = 0;
 	const char *last = "";
@@ -131,10 +132,14 @@ static int repo_info(int argc, const char **argv, const char *prefix,
 		     struct repository *repo)
 {
 	const char *format_str = "keyvalue";
+	const char *path_format_str = NULL;
 	enum output_format format;
+	enum path_format_type path_format = PATH_FORMAT_DEFAULT;
 	struct option options[] = {
 		OPT_STRING(0, "format", &format_str, N_("format"),
 			   N_("output format")),
+		OPT_STRING(0, "path-format", &path_format_str,
+			   N_("path-format"), N_("path format")),
 		OPT_END()
 	};
 
@@ -147,7 +152,16 @@ static int repo_info(int argc, const char **argv, const char *prefix,
 	else
 		die(_("invalid format '%s'"), format_str);
 
-	return print_fields(argc, argv, repo, format);
+	if (path_format_str) {
+		if (!strcmp(path_format_str, "absolute"))
+			path_format = PATH_FORMAT_CANONICAL;
+		else if (!strcmp(path_format_str, "relative"))
+			path_format = PATH_FORMAT_RELATIVE;
+		else
+			die(_("invalid path format '%s'"), path_format_str);
+	}
+
+	return print_fields(argc, argv, repo, format, path_format);
 }
 
 int cmd_repo(int argc, const char **argv, const char *prefix,
