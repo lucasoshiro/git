@@ -623,73 +623,13 @@ static void handle_ref_opt(const char *pattern, const char *prefix)
 	clear_ref_exclusions(&ref_excludes);
 }
 
-enum path_format_type {
-	/* We would like a relative path. */
-	PATH_FORMAT_RELATIVE,
-	/* We would like a canonical absolute path. */
-	PATH_FORMAT_CANONICAL,
-	/* We would like the default behavior. */
-	PATH_FORMAT_DEFAULT,
-};
-
-enum path_default_type {
-	/* Our default is a relative path. */
-	PATH_DEFAULT_RELATIVE,
-	/* Our default is a relative path if there's a shared root. */
-	PATH_DEFAULT_RELATIVE_IF_SHARED,
-	/* Our default is a canonical absolute path. */
-	PATH_DEFAULT_CANONICAL,
-	/* Our default is not to modify the item. */
-	PATH_DEFAULT_UNMODIFIED,
-};
-
-static void print_path(const char *path, const char *prefix, enum path_format_type format, enum path_default_type def)
+static void print_path(const char *path, const char *prefix,
+		       enum path_format_type format, enum path_default_type def)
 {
-	char *cwd = NULL;
-	/*
-	 * We don't ever produce a relative path if prefix is NULL, so set the
-	 * prefix to the current directory so that we can produce a relative
-	 * path whenever possible.  If we're using RELATIVE_IF_SHARED mode, then
-	 * we want an absolute path unless the two share a common prefix, so don't
-	 * set it in that case, since doing so causes a relative path to always
-	 * be produced if possible.
-	 */
-	if (!prefix && (format != PATH_FORMAT_DEFAULT || def != PATH_DEFAULT_RELATIVE_IF_SHARED))
-		prefix = cwd = xgetcwd();
-	if (format == PATH_FORMAT_DEFAULT && def == PATH_DEFAULT_UNMODIFIED) {
-		puts(path);
-	} else if (format == PATH_FORMAT_RELATIVE ||
-		  (format == PATH_FORMAT_DEFAULT && def == PATH_DEFAULT_RELATIVE)) {
-		/*
-		 * In order for relative_path to work as expected, we need to
-		 * make sure that both paths are absolute paths.  If we don't,
-		 * we can end up with an unexpected absolute path that the user
-		 * didn't want.
-		 */
-		struct strbuf buf = STRBUF_INIT, realbuf = STRBUF_INIT, prefixbuf = STRBUF_INIT;
-		if (!is_absolute_path(path)) {
-			strbuf_realpath_forgiving(&realbuf, path,  1);
-			path = realbuf.buf;
-		}
-		if (!is_absolute_path(prefix)) {
-			strbuf_realpath_forgiving(&prefixbuf, prefix, 1);
-			prefix = prefixbuf.buf;
-		}
-		puts(relative_path(path, prefix, &buf));
-		strbuf_release(&buf);
-		strbuf_release(&realbuf);
-		strbuf_release(&prefixbuf);
-	} else if (format == PATH_FORMAT_DEFAULT && def == PATH_DEFAULT_RELATIVE_IF_SHARED) {
-		struct strbuf buf = STRBUF_INIT;
-		puts(relative_path(path, prefix, &buf));
-		strbuf_release(&buf);
-	} else {
-		struct strbuf buf = STRBUF_INIT;
-		strbuf_realpath_forgiving(&buf, path, 1);
-		puts(buf.buf);
-		strbuf_release(&buf);
-	}
-	free(cwd);
+	struct strbuf sb = STRBUF_INIT;
+	strbuf_add_path(&sb, path, prefix, format, def);
+	puts(sb.buf);
+	strbuf_release(&sb);
 }
 
 int cmd_rev_parse(int argc,
