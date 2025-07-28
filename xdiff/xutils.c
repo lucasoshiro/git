@@ -299,7 +299,7 @@ unsigned long xdl_hash_record_with_whitespace(char const **data,
  * changing evaluation order with respect to following uses of X and Y.
  */
 #ifdef __GNUC__
-#define REASSOC_FENCE(x, y) asm("" : "+r"(x), "+r"(y))
+#define REASSOC_FENCE(x, y) __asm__("" : "+r"(x), "+r"(y))
 #else
 #define REASSOC_FENCE(x, y)
 #endif
