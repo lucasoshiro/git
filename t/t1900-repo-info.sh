@@ -149,4 +149,11 @@ test_expect_success 'git repo info --keys uses lines as its default output forma
 	test_cmp expect actual
 '
 
+test_expect_success 'git-repo-info aborts when requesting an invalid path format' '
+	test_when_finished "rm -f err expected" &&
+	echo "fatal: invalid path format '\'foo\''" >expected &&
+	test_must_fail git repo info --path-format=foo 2>err &&
+	test_cmp expected err
+'
+
 test_done

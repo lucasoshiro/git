@@ -7,17 +7,16 @@
 #include "parse-options.h"
 #include "path-walk.h"
 #include "progress.h"
+#include "path.h"
 #include "quote.h"
 #include "ref-filter.h"
 #include "refs.h"
 #include "revision.h"
-#include "strbuf.h"
-#include "string-list.h"
 #include "shallow.h"
 #include "utf8.h"
 
 static const char *const repo_usage[] = {
-	"git repo info [--format=(lines|nul) | -z] [--all | <key>...]",
+	"git repo info [--format=(lines|nul) | -z] [--path-format=(absolute|relative)] [--all | <key>...]",
 	"git repo info --keys [--format=(lines|nul) | -z]",
 	"git repo structure [--format=(table|lines|nul) | -z]",
 	NULL
@@ -109,7 +108,8 @@ static void print_field(enum output_format format, const char *key,
 
 static int print_fields(int argc, const char **argv,
 			struct repository *repo,
-			enum output_format format)
+			enum output_format format,
+			enum path_format_type path_format UNUSED)
 {
 	int ret = 0;
 	struct strbuf valbuf = STRBUF_INIT;
@@ -197,6 +197,9 @@ static int cmd_repo_info(int argc, const char **argv, const char *prefix,
 	enum output_format format = FORMAT_NEWLINE_TERMINATED;
 	int all_keys = 0;
 	int show_keys = 0;
+	const char *path_format_str = NULL;
+	enum path_format_type path_format = PATH_FORMAT_DEFAULT;
+
 	struct option options[] = {
 		OPT_CALLBACK_F(0, "format", &format, N_("format"),
 			       N_("output format"),
@@ -207,6 +210,8 @@ static int cmd_repo_info(int argc, const char **argv, const char *prefix,
 			       parse_format_cb),
 		OPT_BOOL(0, "all", &all_keys, N_("print all keys/values")),
 		OPT_BOOL(0, "keys", &show_keys, N_("show keys")),
+		OPT_STRING(0, "path-format", &path_format_str,
+			   N_("path-format"), N_("path format")),
 		OPT_END()
 	};
 
@@ -221,13 +226,22 @@ static int cmd_repo_info(int argc, const char **argv, const char *prefix,
 	if (format != FORMAT_NEWLINE_TERMINATED && format != FORMAT_NUL_TERMINATED)
 		die(_("unsupported output format"));
 
+	if (path_format_str) {
+		if (!strcmp(path_format_str, "absolute"))
+			path_format = PATH_FORMAT_CANONICAL;
+		else if (!strcmp(path_format_str, "relative"))
+			path_format = PATH_FORMAT_RELATIVE;
+		else
+			die(_("invalid path format '%s'"), path_format_str);
+	}
+
 	if (all_keys && argc)
 		die(_("--all and <key> cannot be used together"));
 
 	if (all_keys)
 		return print_all_fields(repo, format);
 	else
-		return print_fields(argc, argv, repo, format);
+		return print_fields(argc, argv, repo, format, path_format);
 }
 
 struct ref_stats {
