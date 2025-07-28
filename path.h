@@ -273,6 +273,29 @@ enum scld_error safe_create_leading_directories_no_share(char *path);
 int safe_create_file_with_leading_directories(struct repository *repo,
 					      const char *path);
 
+enum path_format_type {
+	/* We would like a relative path. */
+	PATH_FORMAT_RELATIVE,
+	/* We would like a canonical absolute path. */
+	PATH_FORMAT_CANONICAL,
+	/* We would like the default behavior. */
+	PATH_FORMAT_DEFAULT,
+};
+
+enum path_default_type {
+	/* Our default is a relative path. */
+	PATH_DEFAULT_RELATIVE,
+	/* Our default is a relative path if there's a shared root. */
+	PATH_DEFAULT_RELATIVE_IF_SHARED,
+	/* Our default is a canonical absolute path. */
+	PATH_DEFAULT_CANONICAL,
+	/* Our default is not to modify the item. */
+	PATH_DEFAULT_UNMODIFIED,
+};
+
+void strbuf_add_path(struct strbuf *buf, const char *path, const char *prefix,
+		     enum path_format_type format, enum path_default_type def);
+
 # ifdef USE_THE_REPOSITORY_VARIABLE
 #  include "strbuf.h"
 #  include "repository.h"
