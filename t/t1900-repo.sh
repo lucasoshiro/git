@@ -59,6 +59,12 @@ test_repo_info 'shallow repository = true is retrieved correctly' '
 	git -C remote commit -m x &&
 	git clone --depth 1 "file://$PWD/remote"' 'shallow' 'layout.shallow' 'true'
 
+test_repo_info 'objects.format = sha1 is retrieved correctly' '
+	git init --object-format=sha1' 'sha1' 'objects.format' 'sha1'
+
+test_repo_info 'objects.format = sha256 is retrieved correctly' '
+	git init --object-format=sha256' 'sha256' 'objects.format' 'sha256'
+
 test_expect_success 'git-repo-info fails if an invalid key is requested' '
 	echo "error: key '\'foo\'' not found" >expected_err &&
 	test_must_fail git repo info foo 2>actual_err &&
