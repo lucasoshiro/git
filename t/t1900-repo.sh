@@ -41,6 +41,16 @@ test_repo_info 'bare repository = false is retrieved correctly' \
 test_repo_info 'bare repository = true is retrieved correctly' \
 	'git init --bare' 'bare' 'layout.bare' 'true'
 
+test_repo_info 'shallow repository = false is retrieved correctly' \
+	'git init' 'nonshallow' 'layout.shallow' 'false'
+
+test_repo_info 'shallow repository = true is retrieved correctly' \
+	'git init remote &&
+	echo x >remote/x &&
+	git -C remote add x &&
+	git -C remote commit -m x &&
+	git clone --depth 1 "file://$PWD/remote"' 'shallow' 'layout.shallow' 'true'
+
 test_expect_success 'git-repo-info fails if an invalid key is requested' '
 	echo "error: key ${SQ}foo${SQ} not found" >expected_err &&
 	test_must_fail git repo info foo 2>actual_err &&
