@@ -1463,7 +1463,7 @@ static int set_head(int argc, const char **argv, const char *prefix,
 		b_local_head = STRBUF_INIT;
 	char *head_name = NULL;
 	struct ref_store *refs = get_main_ref_store(the_repository);
-	struct remote *remote;
+	struct remote *remote = NULL;
 
 	struct option options[] = {
 		OPT_BOOL('a', "auto", &opt_a,
