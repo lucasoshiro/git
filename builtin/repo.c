@@ -22,7 +22,8 @@ static const char *const repo_usage[] = {
 	NULL
 };
 
-typedef int get_value_fn(struct repository *repo, struct strbuf *buf);
+typedef int get_value_fn(struct repository *repo, struct strbuf *buf,
+			 const char *prefix, enum path_format_type format);
 
 enum output_format {
 	FORMAT_TABLE,
@@ -35,26 +36,46 @@ struct repo_info_field {
 	get_value_fn *get_value;
 };
 
-static int get_layout_bare(struct repository *repo UNUSED, struct strbuf *buf)
+static int get_layout_bare(struct repository *repo UNUSED, struct strbuf *buf,
+			   const char *prefix UNUSED,
+			   enum path_format_type format UNUSED)
 {
 	strbuf_addstr(buf, is_bare_repository() ? "true" : "false");
 	return 0;
 }
 
-static int get_layout_shallow(struct repository *repo, struct strbuf *buf)
+static int get_layout_shallow(struct repository *repo, struct strbuf *buf,
+			      const char *prefix UNUSED,
+			      enum path_format_type format UNUSED)
 {
 	strbuf_addstr(buf,
 		      is_repository_shallow(repo) ? "true" : "false");
 	return 0;
 }
 
-static int get_object_format(struct repository *repo, struct strbuf *buf)
+static int get_object_format(struct repository *repo, struct strbuf *buf,
+			     const char *prefix UNUSED,
+			     enum path_format_type format UNUSED)
 {
 	strbuf_addstr(buf, repo->hash_algo->name);
 	return 0;
 }
 
-static int get_references_format(struct repository *repo, struct strbuf *buf)
+static int get_path_toplevel(struct repository *repo, struct strbuf *buf,
+			     const char *prefix, enum path_format_type format)
+{
+	const char *work_tree = repo_get_work_tree(repo);
+	if (work_tree)
+		strbuf_add_path(buf, work_tree, prefix, format,
+				PATH_DEFAULT_UNMODIFIED);
+	else
+		return error(_("this operation must be run in a work tree"));
+	return 0;
+}
+
+static int get_references_format(struct repository *repo, struct strbuf *buf,
+				 const char *prefix UNUSED,
+				 enum path_format_type format UNUSED)
 {
 	strbuf_addstr(buf,
 		      ref_storage_format_to_name(repo->ref_storage_format));
@@ -66,6 +87,7 @@ static const struct repo_info_field repo_info_field[] = {
 	{ "layout.bare", get_layout_bare },
 	{ "layout.shallow", get_layout_shallow },
 	{ "object.format", get_object_format },
+	{ "path.toplevel", get_path_toplevel },
 	{ "references.format", get_references_format },
 };
 
@@ -108,8 +130,9 @@ static void print_field(enum output_format format, const char *key,
 
 static int print_fields(int argc, const char **argv,
 			struct repository *repo,
+			const char *prefix,
 			enum output_format format,
-			enum path_format_type path_format UNUSED)
+			enum path_format_type path_format)
 {
 	int ret = 0;
 	struct strbuf valbuf = STRBUF_INIT;
@@ -124,7 +147,7 @@ static int print_fields(int argc, const char **argv,
 		}
 
 		strbuf_reset(&valbuf);
-		field->get_value(repo, &valbuf);
+		field->get_value(repo, &valbuf, prefix, path_format);
 		print_field(format, key, valbuf.buf);
 	}
 
@@ -133,7 +156,9 @@ static int print_fields(int argc, const char **argv,
 }
 
 static int print_all_fields(struct repository *repo,
-			    enum output_format format)
+			    const char *prefix,
+			    enum output_format format,
+			    enum path_format_type path_format)
 {
 	struct strbuf valbuf = STRBUF_INIT;
 
@@ -141,7 +166,7 @@ static int print_all_fields(struct repository *repo,
 		const struct repo_info_field *field = &repo_info_field[i];
 
 		strbuf_reset(&valbuf);
-		field->get_value(repo, &valbuf);
+		field->get_value(repo, &valbuf, prefix, path_format);
 		print_field(format, field->key, valbuf.buf);
 	}
 
@@ -239,9 +264,9 @@ static int cmd_repo_info(int argc, const char **argv, const char *prefix,
 		die(_("--all and <key> cannot be used together"));
 
 	if (all_keys)
-		return print_all_fields(repo, format);
+		return print_all_fields(repo, prefix, format, path_format);
 	else
-		return print_fields(argc, argv, repo, format, path_format);
+		return print_fields(argc, argv, repo, prefix, format, path_format);
 }
 
 struct ref_stats {
