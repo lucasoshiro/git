@@ -39,6 +39,53 @@ test_repo_info () {
 	'
 }
 
+test_repo_info_path () {
+	label=$1
+	repo_name=$2
+	key=$3
+	relative_path=$4
+	default=$5
+
+        absolute_path=$(cd "$relative_path"; pwd)/"$repo_name"
+
+	case $default in
+	absolute)
+		expected_value="$absolute_path"
+		;;
+	relative)
+		expected_value="$relative_path"
+		;;
+	esac
+
+	test_expect_success "setup $label" '
+		git init "$repo_name"
+	'
+
+	test_expect_success "nul: $label" '
+		printf "%s\n%s\0" "$key" "$expected_value" >expected &&
+		git -C "$repo_name" repo info --format=nul "$key" >actual &&
+		test_cmp_bin expected actual
+	'
+
+	test_expect_success "default: $label" '
+		echo "$key=$expected_value" > expected &&
+		git -C "$repo_name" repo info "$key" >actual &&
+		test_cmp_bin expected actual
+	'
+
+	test_expect_success "absolute: $label" '
+		echo "$key=$absolute_path" > expected &&
+		git -C "$repo_name" repo info --path-format=absolute "$key" >actual &&
+		test_cmp_bin expected actual
+	'
+
+	test_expect_success "relative: $label" '
+		echo "$key=$relative_path" > expected &&
+		git -C "$repo_name" repo info --path-format=relative "$key" >actual &&
+		test_cmp_bin expected actual
+	'
+}
+
 test_repo_info 'ref format files is retrieved correctly' '
 	git init --ref-format=files' 'format-files' 'references.format' 'files'
 
@@ -63,6 +110,16 @@ test_expect_success 'setup remote' '
 
 test_repo_info 'shallow repository = true is retrieved correctly' \
 	'git clone --depth 1 "file://$PWD/remote"' 'shallow' 'layout.shallow' 'true'
+
+test_expect_success 'git-repo-info aborts if an invalid key is requested' '
+	test_when_finished "rm -rf expected err" &&
+	echo "error: key '\'foo\'' not found" >expected &&
+	test_must_fail git repo info foo 2>err &&
+	test_cmp expected err
+'
+
+test_repo_info_path 'toplevel is retrieved correctly' \
+	'toplevel' 'path.toplevel' './' 'absolute'
 
 test_expect_success 'git-repo-info fails if an invalid key is requested' '
 	echo "error: key ${SQ}foo${SQ} not found" >expected_err &&
@@ -105,6 +162,5 @@ test_expect_success 'git-repo-info aborts when requesting an invalid path format
 	test_must_fail git repo info --path-format=foo 2>err &&
 	test_cmp expected err
 '
-
 
 test_done
