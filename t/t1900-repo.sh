@@ -110,4 +110,10 @@ test_expect_success 'git repo info uses the last requested format' '
 	test_cmp expected actual
 '
 
+test_expect_success 'git repo info --all returns all fields' '
+	git repo info layout.bare layout.shallow object.format references.format >expect &&
+	git repo info --all >actual &&
+	test_cmp expect actual
+'
+
 test_done
