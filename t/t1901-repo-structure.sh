@@ -102,6 +102,12 @@ test_expect_success 'keyvalue and nul format' '
 		git repo structure --format=nul >out 2>err &&
 
 		test_cmp expect_nul out &&
+		test_line_count = 0 err &&
+
+		# Check -z
+		git repo structure --format=nul >out 2>err &&
+
+		test_cmp expect_nul out &&
 		test_line_count = 0 err
 	)
 '
