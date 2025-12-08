@@ -131,4 +131,16 @@ test_expect_success 'git repo info --all <key> aborts' '
 	test_cmp expect actual
 '
 
+test_expect_success '--format=default is a synonym for --format=keyvalue' '
+	git repo info --all --format=keyvalue >expect &&
+	git repo info --all --format=default >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success '--format=default resets the format' '
+	git repo info --all >expect &&
+	git repo info --all --format=nul --format=default >actual &&
+	test_cmp expect actual
+'
+
 test_done
