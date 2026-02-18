@@ -2136,9 +2136,9 @@ static int merge_3way(struct merge_options *opt,
 		name2 = mkpathdup("%s:%s", opt->branch2,  pathnames[2]);
 	}
 
-	read_mmblob(&orig, o);
-	read_mmblob(&src1, a);
-	read_mmblob(&src2, b);
+	read_mmblob(&orig, the_repository->objects, o);
+	read_mmblob(&src1, the_repository->objects, a);
+	read_mmblob(&src2, the_repository->objects, b);
 
 	merge_status = ll_merge(result_buf, path, &orig, base,
 				&src1, name1, &src2, name2,
@@ -2731,7 +2731,7 @@ static void apply_directory_rename_modifications(struct merge_options *opt,
 
 	while (1) {
 		/* Find the parent directory of cur_path */
-		char *last_slash = strrchr(cur_path, '/');
+		const char *last_slash = strrchr(cur_path, '/');
 		if (last_slash) {
 			parent_name = mem_pool_strndup(&opt->priv->pool,
 						       cur_path,
@@ -5302,7 +5302,7 @@ static void merge_ort_internal(struct merge_options *opt,
 			       struct commit *h2,
 			       struct merge_result *result)
 {
-	struct commit_list *merge_bases = copy_commit_list(_merge_bases);
+	struct commit_list *merge_bases = commit_list_copy(_merge_bases);
 	struct commit *next;
 	struct commit *merged_merge_bases;
 	const char *ancestor_name;
@@ -5315,7 +5315,7 @@ static void merge_ort_internal(struct merge_options *opt,
 			goto out;
 		}
 		/* See merge-ort.h:merge_incore_recursive() declaration NOTE */
-		merge_bases = reverse_commit_list(merge_bases);
+		merge_bases = commit_list_reverse(merge_bases);
 	}
 
 	merged_merge_bases = pop_commit(&merge_bases);
@@ -5383,7 +5383,7 @@ static void merge_ort_internal(struct merge_options *opt,
 	opt->ancestor = NULL;  /* avoid accidental re-use of opt->ancestor */
 
 out:
-	free_commit_list(merge_bases);
+	commit_list_free(merge_bases);
 }
 
 void merge_incore_nonrecursive(struct merge_options *opt,

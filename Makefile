@@ -342,6 +342,9 @@ include shared.mak
 # If it isn't set, fallback to $LC_ALL, $LANG or use the first utf-8
 # locale returned by "locale -a".
 #
+# Define TEST_CONTRIB_TOO to make "make test" run tests in contrib/
+# directories.
+#
 # Define HAVE_CLOCK_GETTIME if your platform has clock_gettime.
 #
 # Define HAVE_CLOCK_MONOTONIC if your platform has CLOCK_MONOTONIC.
@@ -1285,6 +1288,7 @@ LIB_OBJS += repack-geometry.o
 LIB_OBJS += repack-midx.o
 LIB_OBJS += repack-promisor.o
 LIB_OBJS += replace-object.o
+LIB_OBJS += replay.o
 LIB_OBJS += repo-settings.o
 LIB_OBJS += repository.o
 LIB_OBJS += rerere.o
@@ -1417,6 +1421,7 @@ BUILTIN_OBJS += builtin/get-tar-commit-id.o
 BUILTIN_OBJS += builtin/grep.o
 BUILTIN_OBJS += builtin/hash-object.o
 BUILTIN_OBJS += builtin/help.o
+BUILTIN_OBJS += builtin/history.o
 BUILTIN_OBJS += builtin/hook.o
 BUILTIN_OBJS += builtin/index-pack.o
 BUILTIN_OBJS += builtin/init-db.o
@@ -3369,6 +3374,9 @@ export TEST_NO_MALLOC_CHECK
 
 test: all
 	$(MAKE) -C t/ all
+ifdef TEST_CONTRIB_TOO
+	$(MAKE) -C contrib/ test
+endif
 
 perf: all
 	$(MAKE) -C t/perf/ all

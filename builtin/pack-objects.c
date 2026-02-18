@@ -44,7 +44,6 @@
 #include "blob.h"
 #include "tree.h"
 #include "path-walk.h"
-#include "trace2.h"
 
 /*
  * Objects we are going to pack are collected in the `to_pack` structure.
@@ -3855,10 +3854,8 @@ static void read_packs_list_from_stdin(struct rev_info *revs)
 		strbuf_reset(&buf);
 	}
 
-	string_list_sort(&include_packs);
-	string_list_remove_duplicates(&include_packs, 0);
-	string_list_sort(&exclude_packs);
-	string_list_remove_duplicates(&exclude_packs, 0);
+	string_list_sort_u(&include_packs, 0);
+	string_list_sort_u(&exclude_packs, 0);
 
 	repo_for_each_pack(the_repository, p) {
 		const char *pack_name = pack_basename(p);

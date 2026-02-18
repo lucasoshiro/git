@@ -246,7 +246,8 @@ static void add_branch_desc(struct strbuf *out, const char *name)
 static void record_person_from_buf(int which, struct string_list *people,
 				   const char *buffer)
 {
-	char *name_buf, *name, *name_end;
+	char *name_buf;
+	const char *name, *name_end;
 	struct string_list_item *elem;
 	const char *field;
 
@@ -421,7 +422,7 @@ static void shortlog(const char *name,
 
 	clear_commit_marks((struct commit *)branch, flags);
 	clear_commit_marks(head, flags);
-	free_commit_list(rev->commits);
+	commit_list_free(rev->commits);
 	rev->commits = NULL;
 	rev->pending.nr = 0;
 
