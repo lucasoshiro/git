@@ -623,27 +623,27 @@ static void handle_ref_opt(const char *pattern, const char *prefix)
 	clear_ref_exclusions(&ref_excludes);
 }
 
-enum format_type {
+enum path_format_type {
 	/* We would like a relative path. */
-	FORMAT_RELATIVE,
+	PATH_FORMAT_RELATIVE,
 	/* We would like a canonical absolute path. */
-	FORMAT_CANONICAL,
+	PATH_FORMAT_CANONICAL,
 	/* We would like the default behavior. */
-	FORMAT_DEFAULT,
+	PATH_FORMAT_DEFAULT,
 };
 
-enum default_type {
+enum path_default_type {
 	/* Our default is a relative path. */
-	DEFAULT_RELATIVE,
+	PATH_DEFAULT_RELATIVE,
 	/* Our default is a relative path if there's a shared root. */
-	DEFAULT_RELATIVE_IF_SHARED,
+	PATH_DEFAULT_RELATIVE_IF_SHARED,
 	/* Our default is a canonical absolute path. */
-	DEFAULT_CANONICAL,
+	PATH_DEFAULT_CANONICAL,
 	/* Our default is not to modify the item. */
-	DEFAULT_UNMODIFIED,
+	PATH_DEFAULT_UNMODIFIED,
 };
 
-static void print_path(const char *path, const char *prefix, enum format_type format, enum default_type def)
+static void print_path(const char *path, const char *prefix, enum path_format_type format, enum path_default_type def)
 {
 	char *cwd = NULL;
 	/*
@@ -654,12 +654,12 @@ static void print_path(const char *path, const char *prefix, enum format_type fo
 	 * set it in that case, since doing so causes a relative path to always
 	 * be produced if possible.
 	 */
-	if (!prefix && (format != FORMAT_DEFAULT || def != DEFAULT_RELATIVE_IF_SHARED))
+	if (!prefix && (format != PATH_FORMAT_DEFAULT || def != PATH_DEFAULT_RELATIVE_IF_SHARED))
 		prefix = cwd = xgetcwd();
-	if (format == FORMAT_DEFAULT && def == DEFAULT_UNMODIFIED) {
+	if (format == PATH_FORMAT_DEFAULT && def == PATH_DEFAULT_UNMODIFIED) {
 		puts(path);
-	} else if (format == FORMAT_RELATIVE ||
-		  (format == FORMAT_DEFAULT && def == DEFAULT_RELATIVE)) {
+	} else if (format == PATH_FORMAT_RELATIVE ||
+		  (format == PATH_FORMAT_DEFAULT && def == PATH_DEFAULT_RELATIVE)) {
 		/*
 		 * In order for relative_path to work as expected, we need to
 		 * make sure that both paths are absolute paths.  If we don't,
@@ -679,7 +679,7 @@ static void print_path(const char *path, const char *prefix, enum format_type fo
 		strbuf_release(&buf);
 		strbuf_release(&realbuf);
 		strbuf_release(&prefixbuf);
-	} else if (format == FORMAT_DEFAULT && def == DEFAULT_RELATIVE_IF_SHARED) {
+	} else if (format == PATH_FORMAT_DEFAULT && def == PATH_DEFAULT_RELATIVE_IF_SHARED) {
 		struct strbuf buf = STRBUF_INIT;
 		puts(relative_path(path, prefix, &buf));
 		strbuf_release(&buf);
@@ -708,7 +708,7 @@ int cmd_rev_parse(int argc,
 	const char *name = NULL;
 	struct strbuf buf = STRBUF_INIT;
 	int seen_end_of_options = 0;
-	enum format_type format = FORMAT_DEFAULT;
+	enum path_format_type format = PATH_FORMAT_DEFAULT;
 
 	show_usage_if_asked(argc, argv, builtin_rev_parse_usage);
 
@@ -789,7 +789,7 @@ int cmd_rev_parse(int argc,
 				print_path(repo_git_path_replace(the_repository, &buf,
 								 "%s", argv[i + 1]), prefix,
 						format,
-						DEFAULT_RELATIVE_IF_SHARED);
+					   PATH_DEFAULT_RELATIVE_IF_SHARED);
 				i++;
 				continue;
 			}
@@ -811,9 +811,9 @@ int cmd_rev_parse(int argc,
 				if (!arg)
 					die(_("--path-format requires an argument"));
 				if (!strcmp(arg, "absolute")) {
-					format = FORMAT_CANONICAL;
+					format = PATH_FORMAT_CANONICAL;
 				} else if (!strcmp(arg, "relative")) {
-					format = FORMAT_RELATIVE;
+					format = PATH_FORMAT_RELATIVE;
 				} else {
 					die(_("unknown argument to --path-format: %s"), arg);
 				}
@@ -977,7 +977,7 @@ int cmd_rev_parse(int argc,
 			if (!strcmp(arg, "--show-toplevel")) {
 				const char *work_tree = repo_get_work_tree(the_repository);
 				if (work_tree)
-					print_path(work_tree, prefix, format, DEFAULT_UNMODIFIED);
+					print_path(work_tree, prefix, format, PATH_DEFAULT_UNMODIFIED);
 				else
 					die(_("this operation must be run in a work tree"));
 				continue;
@@ -985,7 +985,7 @@ int cmd_rev_parse(int argc,
 			if (!strcmp(arg, "--show-superproject-working-tree")) {
 				struct strbuf superproject = STRBUF_INIT;
 				if (get_superproject_working_tree(&superproject))
-					print_path(superproject.buf, prefix, format, DEFAULT_UNMODIFIED);
+					print_path(superproject.buf, prefix, format, PATH_DEFAULT_UNMODIFIED);
 				strbuf_release(&superproject);
 				continue;
 			}
@@ -1020,18 +1020,18 @@ int cmd_rev_parse(int argc,
 				const char *gitdir = getenv(GIT_DIR_ENVIRONMENT);
 				char *cwd;
 				int len;
-				enum format_type wanted = format;
+				enum path_format_type wanted = format;
 				if (arg[2] == 'g') {	/* --git-dir */
 					if (gitdir) {
-						print_path(gitdir, prefix, format, DEFAULT_UNMODIFIED);
+						print_path(gitdir, prefix, format, PATH_DEFAULT_UNMODIFIED);
 						continue;
 					}
 					if (!prefix) {
-						print_path(".git", prefix, format, DEFAULT_UNMODIFIED);
+						print_path(".git", prefix, format, PATH_DEFAULT_UNMODIFIED);
 						continue;
 					}
 				} else {		/* --absolute-git-dir */
-					wanted = FORMAT_CANONICAL;
+					wanted = PATH_FORMAT_CANONICAL;
 					if (!gitdir && !prefix)
 						gitdir = ".git";
 					if (gitdir) {
@@ -1047,11 +1047,11 @@ int cmd_rev_parse(int argc,
 				strbuf_reset(&buf);
 				strbuf_addf(&buf, "%s%s.git", cwd, len && cwd[len-1] != '/' ? "/" : "");
 				free(cwd);
-				print_path(buf.buf, prefix, wanted, DEFAULT_CANONICAL);
+				print_path(buf.buf, prefix, wanted, PATH_DEFAULT_CANONICAL);
 				continue;
 			}
 			if (!strcmp(arg, "--git-common-dir")) {
-				print_path(repo_get_common_dir(the_repository), prefix, format, DEFAULT_RELATIVE_IF_SHARED);
+				print_path(repo_get_common_dir(the_repository), prefix, format, PATH_DEFAULT_RELATIVE_IF_SHARED);
 				continue;
 			}
 			if (!strcmp(arg, "--is-inside-git-dir")) {
@@ -1081,7 +1081,7 @@ int cmd_rev_parse(int argc,
 				if (the_repository->index->split_index) {
 					const struct object_id *oid = &the_repository->index->split_index->base_oid;
 					const char *path = repo_git_path_replace(the_repository, &buf, "sharedindex.%s", oid_to_hex(oid));
-					print_path(path, prefix, format, DEFAULT_RELATIVE);
+					print_path(path, prefix, format, PATH_DEFAULT_RELATIVE);
 				}
 				continue;
 			}
